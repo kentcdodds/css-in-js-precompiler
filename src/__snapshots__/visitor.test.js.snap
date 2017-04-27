@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`converts static objects to css class names 1`] = `
+"glamorous(
+  \\"css-1i7gko5\\",
+  \\"css-oh2yv\\",
+)"
+`;
