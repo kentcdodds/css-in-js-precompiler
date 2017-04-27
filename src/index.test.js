@@ -1,3 +1,4 @@
+import cssParser from 'css'
 import stripIndent from 'strip-indent'
 
 const precompile = require('./')
@@ -23,7 +24,9 @@ test('precompiles css-in-js source code', () => {
     ).trim(),
   })
   const {code, css} = result
-  expect({code, css}).toMatchSnapshot()
+  const formattedCSS = cssParser.stringify(cssParser.parse(css))
+  expect(code).toMatchSnapshot('1. sanity test code')
+  expect(formattedCSS).toMatchSnapshot('2. sanity test css')
   // we send along everything that babel gives us
   // and we don't really care to snapshot that
   // but it'd be nice to know if one of those changes

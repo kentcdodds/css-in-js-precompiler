@@ -1,4 +1,3 @@
-import path from 'path'
 import stripIndent from 'strip-indent'
 import * as recast from 'recast'
 import * as babel from 'babel-core'
@@ -28,9 +27,7 @@ function transpile(source) {
     parserOpts: {parser: recast.parse},
     generatorOpts: {generator: recast.print, lineTerminator: '\n'},
     babelrc: false,
-    plugins: [
-      [glamorousStatic, {outputFile: path.join(__dirname, './out/glamor.css')}],
-    ],
+    plugins: [glamorousStatic],
   })
   return code
 }
