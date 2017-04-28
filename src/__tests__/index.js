@@ -1,18 +1,27 @@
 import path from 'path'
 import cssParser from 'css'
 import stripIndent from 'strip-indent'
+import * as glamor from 'glamor'
 
 const precompile = require('../')
+
+afterEach(() => {
+  glamor.flush()
+})
 
 const tests = [
   {
     title: 'follows imports',
-    // modifier: 'only',
+    // modifier: 'only', // use this to focus on a single test
     fixtureName: 'import.js',
   },
   {
     title: 'follows requires',
     fixtureName: 'require.js',
+  },
+  {
+    title: 'supports statics in arrow functions',
+    fixtureName: 'arrow-ternary.js',
   },
 ]
 

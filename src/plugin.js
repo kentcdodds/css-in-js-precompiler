@@ -58,11 +58,15 @@ export default function(babel) {
               return
             }
             const callExpression = identifier.parentPath.parentPath
-            const staticArgs = callExpression
+            const staticPaths = callExpression
               .get('arguments')
-              .filter(arg => isStatic(arg.node))
-            staticArgs.forEach(staticArg => {
-              staticArg.replaceWith(t.stringLiteral(glamorize(staticArg)))
+              .reduce(
+                (paths, argPath) => paths.concat(getStaticPaths(argPath)),
+                [],
+              )
+              .filter(Boolean)
+            staticPaths.forEach(staticPath => {
+              staticPath.replaceWith(t.stringLiteral(glamorize(staticPath)))
             })
           })
         },
@@ -74,7 +78,15 @@ export default function(babel) {
   // not just using t.isLiteral because we will eventually
   // look for references to variables and see if _those_
   // things are static. Potentially even across files! 😱
-  function isStatic(node) {
+  function getStaticPaths(path) {
+    if (isStaticObject(path.node)) {
+      return [path]
+    }
+    const staticObjectsInFunction = getStaticsInDynamic(path)
+    return staticObjectsInFunction
+  }
+
+  function isStaticObject(node) {
     return looksLike(node, {
       type: 'ObjectExpression',
       properties: props => {
@@ -89,8 +101,29 @@ export default function(babel) {
     })
   }
 
+  function getStaticsInDynamic(path) {
+    const isSupportedFunction = looksLike(path, {
+      node: {
+        type: 'ArrowFunctionExpression',
+        body: {
+          type: 'ConditionalExpression',
+          consequent: {type: 'ObjectExpression'},
+          alternate: {type: 'ObjectExpression'},
+        },
+      },
+    })
+    if (!isSupportedFunction) {
+      return []
+    }
+    const things = [
+      ...getStaticPaths(path.get('body.consequent')),
+      ...getStaticPaths(path.get('body.alternate')),
+    ]
+    return things
+  }
+
   function isLiteral(node) {
-    return isOne(node, [t.isNumericLiteral, t.isStringLiteral, isStatic])
+    return isOne(node, [t.isNumericLiteral, t.isStringLiteral, isStaticObject])
   }
 }
 

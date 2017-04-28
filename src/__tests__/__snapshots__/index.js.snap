@@ -1,17 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`0. source string 1`] = `
-".css-1ea0ufb,
-[data-css-1ea0ufb] {
-  font-size: 10px;
-}
-
-.css-1rbjb59,
-[data-css-1rbjb59] {
-  font-size: 25px;
-}
-
-.css-1i7gko5,
+".css-1i7gko5,
 [data-css-1i7gko5] {
   font-size: 20px;
   font-weight: normal;
@@ -43,16 +33,27 @@ fred.div('css-1ea0ufb');"
 `;
 
 exports[`2. follows requires 1`] = `
-".css-1ea0ufb,
-[data-css-1ea0ufb] {
-  font-size: 10px;
-}
-
-.css-1rbjb59,
+".css-1rbjb59,
 [data-css-1rbjb59] {
   font-size: 25px;
 }
 
 const ethel = require('glamorous');
 ethel.span('css-1rbjb59');"
+`;
+
+exports[`3. supports statics in arrow functions 1`] = `
+".css-vfrxuj,
+[data-css-vfrxuj] {
+  font-size: 20px;
+}
+
+.css-1dmiui7,
+[data-css-1dmiui7] {
+  font-size: 12px;
+}
+
+import glamorous from 'glamorous';
+
+glamorous.div(({ big }) => big ? 'css-vfrxuj' : 'css-1dmiui7');"
 `;
