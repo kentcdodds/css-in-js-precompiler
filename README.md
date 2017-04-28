@@ -72,9 +72,9 @@ with **any** CSS-in-JS library you're using_.
 ```
 const precompileCSSInJS = require('css-in-js-precompiler')
 const result = precompileCSSInJS({
-  source: 'glamorous({fontSize: 23})',
+  source: 'glamorous.div({fontSize: 23})',
 })
-result.code === 'glamorous("css-my79es");'
+result.code === 'glamorous.div("css-my79es");'
 result.css === '.css-my79es,[data-css-my79es]{font-size:23px;}'
 result.map === '<the code source map>'
 ```
