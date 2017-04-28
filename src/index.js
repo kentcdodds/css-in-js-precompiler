@@ -2,7 +2,7 @@ import * as babel from 'babel-core'
 import {renderStatic} from 'glamor/server'
 import plugin from './plugin'
 
-const babelOptions = {
+const defaultBabelOptions = {
   babelrc: false,
   sourceMaps: true,
   plugins: [plugin],
@@ -10,13 +10,19 @@ const babelOptions = {
 
 module.exports = precompile
 
-function precompile({source, sourceFile}) {
+function precompile({source, sourceFile, babelOptions}) {
   let result
   const {css} = renderStatic(() => {
     if (sourceFile) {
-      result = babel.transformFileSync(sourceFile, babelOptions)
+      result = babel.transformFileSync(sourceFile, {
+        ...defaultBabelOptions,
+        ...babelOptions,
+      })
     } else {
-      result = babel.transform(source, babelOptions)
+      result = babel.transform(source, {
+        ...defaultBabelOptions,
+        ...babelOptions,
+      })
     }
     return '<div>fake html to make glamor happy</div>'
   })

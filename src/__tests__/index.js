@@ -1,9 +1,16 @@
+import fs from 'fs'
 import path from 'path'
 import cssParser from 'css'
 import stripIndent from 'strip-indent'
 import * as glamor from 'glamor'
+import * as recast from 'recast'
 
 const precompile = require('../')
+
+const babelOptions = {
+  parserOpts: {parser: recast.parse},
+  generatorOpts: {generator: recast.print, lineTerminator: '\n'},
+}
 
 afterEach(() => {
   glamor.flush()
@@ -23,6 +30,14 @@ const tests = [
     title: 'supports statics in arrow functions',
     fixtureName: 'arrow-ternary.js',
   },
+  {
+    title: 'follows references',
+    fixtureName: 'references.js',
+  },
+  {
+    title: 'when creating custom glamorous components',
+    fixtureName: 'wrapped-component.js',
+  },
 ]
 
 tests.forEach(({title, fixtureName, modifier}, index) => {
@@ -33,16 +48,29 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
   }
   function testFn() {
     const sourceFile = path.join(__dirname, '__fixtures__', fixtureName)
-    const result = precompile({sourceFile})
+    const source = fs.readFileSync(sourceFile, 'utf8')
+    const result = precompile({source, babelOptions})
+
     const {code, css} = result
-    const formattedCSS = cssParser.stringify(cssParser.parse(css))
-    expect(`${formattedCSS}\n\n${code}`).toMatchSnapshot(
-      `${index + 1}. ${title}`,
-    )
+    const formattedCSS = cssParser.stringify(cssParser.parse(css)).trim()
+    const spacer = `\n\n    👇\n\n`
+    const output = `${source.trim()}${spacer}${code.trim()}\n\n${formattedCSS}`
+
+    expect(`\n${output.trim()}\n`).toMatchSnapshot(`${index + 1}. ${title}`)
   }
 })
 
-test('accepts a source string', () => {
+test('does not change code that should not be changed', () => {
+  const sourceFile = path.join(__dirname, '__fixtures__/untouched.js')
+  const source = fs.readFileSync(sourceFile, 'utf8')
+  const result = precompile({sourceFile, babelOptions})
+
+  const {code, css} = result
+  expect(code.trim()).toEqual(source.trim())
+  expect(css).toEqual('')
+})
+
+test('forwards along a bunch of stuff from babel', () => {
   const result = precompile({
     source: stripIndent(
       `
@@ -63,13 +91,6 @@ test('accepts a source string', () => {
       `,
     ).trim(),
   })
-  const {code, css} = result
-  const formattedCSS = cssParser.stringify(cssParser.parse(css))
-  expect(`${formattedCSS}\n\n${code}`).toMatchSnapshot('0. source string')
-  // we send along everything that babel gives us
-  // and we don't really care to snapshot that
-  // but it'd be nice to know if one of those changes
-  // in the future :)
   expect(Object.keys(result)).toEqual([
     'metadata',
     'options',

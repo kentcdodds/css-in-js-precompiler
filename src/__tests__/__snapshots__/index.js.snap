@@ -1,49 +1,66 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`0. source string 1`] = `
-".css-1i7gko5,
-[data-css-1i7gko5] {
-  font-size: 20px;
-  font-weight: normal;
-}
-
-.css-oh2yv,
-[data-css-oh2yv] {
-  margin: 20px;
-}
-
-.css-oh2yv:hover,
-[data-css-oh2yv]:hover {
-  margin: 10px;
-}
-
-import glamorous from 'glamorous';
-glamorous.div('css-1i7gko5', 'css-oh2yv');
-someOtherCall({ fontSize: 30 });"
-`;
-
 exports[`1. follows imports 1`] = `
-".css-1ea0ufb,
+"
+import fred from 'glamorous'
+fred.div({fontSize: 10})
+
+    👇
+
+import fred from 'glamorous'
+fred.div(\\"css-1ea0ufb\\")
+
+.css-1ea0ufb,
 [data-css-1ea0ufb] {
   font-size: 10px;
 }
-
-import fred from 'glamorous';
-fred.div('css-1ea0ufb');"
+"
 `;
 
 exports[`2. follows requires 1`] = `
-".css-1rbjb59,
+"
+const ethel = require('glamorous')
+ethel.span({fontSize: 25})
+
+    👇
+
+const ethel = require('glamorous')
+ethel.span(\\"css-1rbjb59\\")
+
+.css-1rbjb59,
 [data-css-1rbjb59] {
   font-size: 25px;
 }
-
-const ethel = require('glamorous');
-ethel.span('css-1rbjb59');"
+"
 `;
 
 exports[`3. supports statics in arrow functions 1`] = `
-".css-vfrxuj,
+"
+import glamorous from 'glamorous'
+
+glamorous.div(
+  ({big}) =>
+    (big
+      ? {
+          fontSize: 20,
+        }
+      : {
+          fontSize: 12,
+        })
+)
+
+    👇
+
+import glamorous from 'glamorous'
+
+glamorous.div(
+  ({big}) =>
+    (big
+      ? \\"css-vfrxuj\\"
+      : \\"css-1dmiui7\\")
+)
+
+.css-vfrxuj,
 [data-css-vfrxuj] {
   font-size: 20px;
 }
@@ -52,8 +69,47 @@ exports[`3. supports statics in arrow functions 1`] = `
 [data-css-1dmiui7] {
   font-size: 12px;
 }
+"
+`;
 
-import glamorous from 'glamorous';
+exports[`4. follows references 1`] = `
+"
+import glamorous from 'glamorous'
 
-glamorous.div(({ big }) => big ? 'css-vfrxuj' : 'css-1dmiui7');"
+const styles = {color: 'palevioletred'}
+
+glamorous.div(styles)
+
+    👇
+
+import glamorous from 'glamorous'
+
+const styles = \\"css-zij22n\\"
+
+glamorous.div(styles)
+
+.css-zij22n,
+[data-css-zij22n] {
+  color: palevioletred;
+}
+"
+`;
+
+exports[`5. when creating custom glamorous components 1`] = `
+"
+import g from 'glamorous'
+
+g('div')({margin: 2})
+
+    👇
+
+import g from 'glamorous'
+
+g('div')(\\"css-18570p2\\")
+
+.css-18570p2,
+[data-css-18570p2] {
+  margin: 2px;
+}
+"
 `;

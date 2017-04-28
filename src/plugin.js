@@ -35,12 +35,10 @@ export default function(babel) {
         }
         const {id: {name}} = node
         const binding = path.scope.getBinding(name)
-        if (binding) {
-          const {referencePaths} = binding
-          referencePaths.forEach(reference => {
-            identifiers.add(reference)
-          })
-        }
+        const {referencePaths} = binding
+        referencePaths.forEach(reference => {
+          identifiers.add(reference)
+        })
       },
       Program: {
         exit() {
@@ -75,15 +73,29 @@ export default function(babel) {
   }
 
   // babel utils
-  // not just using t.isLiteral because we will eventually
-  // look for references to variables and see if _those_
-  // things are static. Potentially even across files! 😱
   function getStaticPaths(path) {
-    if (isStaticObject(path.node)) {
-      return [path]
+    const pathGetters = [
+      getStaticObjectPaths,
+      getStaticsInDynamic,
+      getStaticReferences,
+    ]
+    return pathGetters.reduce((pathsAlreadyGotten, pathGetter) => {
+      if (pathsAlreadyGotten) {
+        return pathsAlreadyGotten
+      }
+      const paths = pathGetter(path)
+      if (paths.length) {
+        return paths
+      }
+      return null
+    }, null)
+  }
+
+  function getStaticObjectPaths(path) {
+    if (!isStaticObject(path.node)) {
+      return []
     }
-    const staticObjectsInFunction = getStaticsInDynamic(path)
-    return staticObjectsInFunction
+    return [path]
   }
 
   function isStaticObject(node) {
@@ -120,6 +132,18 @@ export default function(babel) {
       ...getStaticPaths(path.get('body.alternate')),
     ]
     return things
+  }
+
+  function getStaticReferences(path) {
+    if (path.type !== 'Identifier') {
+      return []
+    }
+    const binding = path.scope.getBinding(path.node.name)
+    if (binding) {
+      return getStaticObjectPaths(binding.path.get('init'))
+    } else {
+      return []
+    }
   }
 
   function isLiteral(node) {
