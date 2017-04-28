@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "extends": [
+    "kentcdodds/possible-errors",
+    "kentcdodds/es6/possible-errors",
+    "kentcdodds/prettier"
+  ],
+  "rules": {
+    "semi": [2, "never"] // for ever and ever
+  }
+}

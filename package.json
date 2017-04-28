@@ -59,6 +59,10 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/__fixtures__/"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 100,

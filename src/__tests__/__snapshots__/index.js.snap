@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`0. source string 1`] = `
+".css-1ea0ufb,
+[data-css-1ea0ufb] {
+  font-size: 10px;
+}
+
+.css-1rbjb59,
+[data-css-1rbjb59] {
+  font-size: 25px;
+}
+
+.css-1i7gko5,
+[data-css-1i7gko5] {
+  font-size: 20px;
+  font-weight: normal;
+}
+
+.css-oh2yv,
+[data-css-oh2yv] {
+  margin: 20px;
+}
+
+.css-oh2yv:hover,
+[data-css-oh2yv]:hover {
+  margin: 10px;
+}
+
+import glamorous from 'glamorous';
+glamorous.div('css-1i7gko5', 'css-oh2yv');
+someOtherCall({ fontSize: 30 });"
+`;
+
+exports[`1. follows imports 1`] = `
+".css-1ea0ufb,
+[data-css-1ea0ufb] {
+  font-size: 10px;
+}
+
+import fred from 'glamorous';
+fred.div('css-1ea0ufb');"
+`;
+
+exports[`2. follows requires 1`] = `
+".css-1ea0ufb,
+[data-css-1ea0ufb] {
+  font-size: 10px;
+}
+
+.css-1rbjb59,
+[data-css-1rbjb59] {
+  font-size: 25px;
+}
+
+const ethel = require('glamorous');
+ethel.span('css-1rbjb59');"
+`;

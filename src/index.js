@@ -1,17 +1,23 @@
 import * as babel from 'babel-core'
 import {renderStatic} from 'glamor/server'
-import visitor from './visitor'
+import plugin from './plugin'
+
+const babelOptions = {
+  babelrc: false,
+  sourceMaps: true,
+  plugins: [plugin],
+}
 
 module.exports = precompile
 
-function precompile({source}) {
+function precompile({source, sourceFile}) {
   let result
   const {css} = renderStatic(() => {
-    result = babel.transform(source, {
-      babelrc: false,
-      sourceMaps: true,
-      plugins: [visitor],
-    })
+    if (sourceFile) {
+      result = babel.transformFileSync(sourceFile, babelOptions)
+    } else {
+      result = babel.transform(source, babelOptions)
+    }
     return '<div>fake html to make glamor happy</div>'
   })
   return Object.assign(result, {css})

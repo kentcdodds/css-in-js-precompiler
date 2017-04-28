@@ -1,11 +1,12 @@
 import stripIndent from 'strip-indent'
 import * as recast from 'recast'
 import * as babel from 'babel-core'
-import glamorousStatic from './visitor'
+import plugin from '../plugin'
 
 test('converts static objects to css class names', () => {
   const source = `
-    glamorous(
+    import glamorous from 'glamorous'
+    glamorous.div(
       {
         fontSize: 20,
         fontWeight: 'normal',
@@ -27,7 +28,7 @@ function transpile(source) {
     parserOpts: {parser: recast.parse},
     generatorOpts: {generator: recast.print, lineTerminator: '\n'},
     babelrc: false,
-    plugins: [glamorousStatic],
+    plugins: [plugin],
   })
   return code
 }
