@@ -19,7 +19,6 @@ afterEach(() => {
 const tests = [
   {
     title: 'follows imports',
-    // modifier: 'only', // use this to focus on a single test
     fixtureName: 'import.js',
   },
   {
@@ -37,6 +36,15 @@ const tests = [
   {
     title: 'when creating custom glamorous components',
     fixtureName: 'wrapped-component.js',
+  },
+  {
+    title: 'styles using member expressions',
+    fixtureName: 'member-expression-reference.js',
+  },
+  {
+    modifier: 'skip',
+    title: 'styles using variables across files',
+    fixtureName: 'imported-styles.js',
   },
 ]
 

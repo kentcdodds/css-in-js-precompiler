@@ -10,7 +10,7 @@ import * as glamor from 'glamor'
 
 export default function(babel) {
   const {types: t} = babel
-  const identifiers = new Set()
+  const glamorousIdentifiers = new Set()
   return {
     name: 'glamorous-static',
     visitor: {
@@ -25,7 +25,7 @@ export default function(babel) {
         const {node: {local: {name}}} = defaultSpecifierPath
         const {referencePaths} = path.scope.getBinding(name)
         referencePaths.forEach(reference => {
-          identifiers.add(reference)
+          glamorousIdentifiers.add(reference)
         })
       },
       VariableDeclarator(path) {
@@ -37,12 +37,12 @@ export default function(babel) {
         const binding = path.scope.getBinding(name)
         const {referencePaths} = binding
         referencePaths.forEach(reference => {
-          identifiers.add(reference)
+          glamorousIdentifiers.add(reference)
         })
       },
       Program: {
         exit() {
-          Array.from(identifiers).forEach(identifier => {
+          Array.from(glamorousIdentifiers).forEach(identifier => {
             const isGlamorousCall = looksLike(identifier, {
               parentPath: {
                 type: type =>
@@ -101,15 +101,6 @@ export default function(babel) {
   function isStaticObject(node) {
     return looksLike(node, {
       type: 'ObjectExpression',
-      properties: props => {
-        return props.every(prop =>
-          looksLike(prop, {
-            computed: false,
-            method: false,
-            value: isLiteral,
-          }),
-        )
-      },
     })
   }
 
@@ -146,8 +137,100 @@ export default function(babel) {
     }
   }
 
-  function isLiteral(node) {
-    return isOne(node, [t.isNumericLiteral, t.isStringLiteral, isStaticObject])
+  function glamorize(literalNodePath) {
+    let obj
+    const {code} = babel.transformFromAst(
+      t.program([t.expressionStatement(objectToLiteral(literalNodePath))]),
+    )
+    // eslint-disable-next-line no-eval
+    eval(`obj = ${code}`)
+    const className = glamor.css(obj).toString()
+    return className
+  }
+
+  function objectToLiteral(path) {
+    const props = path.get('properties').map(propPath => {
+      const propNodeClone = t.clone(propPath.node)
+      const valPath = propPath.get('value')
+      propNodeClone.shorthand = false
+      propNodeClone.value = toLiteral(valPath)
+      return propNodeClone
+    })
+    return t.objectExpression(props)
+  }
+
+  function arrayToLiteral(path) {
+    const els = path.get('elements').map(toLiteral)
+    return t.arrayExpression(els)
+  }
+
+  function identifierToLiteral(path) {
+    const binding = path.scope.getBinding(path.node.name)
+    const initPath = binding.path.get('init')
+    return toLiteral(initPath)
+  }
+
+  function memberExpressionToLiteral(path) {
+    const pathProperty = path.get('property')
+    let literalProperty
+    const pathPropertyValue = getPathPropertyValue()
+    const literalObject = toLiteral(path.get('object'))
+    if (t.isObjectExpression(literalObject)) {
+      const literalObjectProperty = literalObject.properties.find(prop => {
+        return prop.key.name === pathPropertyValue
+      })
+      if (literalObjectProperty) {
+        literalProperty = literalObjectProperty.value
+      }
+    } else if (t.isArrayExpression(literalObject)) {
+      literalProperty = literalObject.elements[pathPropertyValue]
+    } else {
+      throw new Error(
+        // eslint-disable-next-line max-len
+        `${literalObject.type} is not yet supported in memberExpressionToLiteral`,
+      )
+    }
+    return t.clone(literalProperty || t.identifier('undefined'))
+
+    function getPathPropertyValue() {
+      if (pathProperty.isIdentifier() && path.node.computed) {
+        return getLiteralPropertyValue(identifierToLiteral(pathProperty))
+      } else {
+        return getLiteralPropertyValue(pathProperty.node)
+      }
+    }
+
+    function getLiteralPropertyValue(node) {
+      if (t.isLiteral(node)) {
+        return node.value
+      } else if (t.isIdentifier(node)) {
+        return node.name
+      } else {
+        throw new Error(
+          // eslint-disable-next-line max-len
+          `${node.type} is not yet supported in getLiteralPropertyValue of memberExpressionToLiteral`,
+        )
+      }
+    }
+  }
+
+  function toLiteral(path) {
+    const toLiterals = [
+      [t.isLiteral, p => t.clone(p.node)],
+      [t.isMemberExpression, memberExpressionToLiteral],
+      [t.isIdentifier, identifierToLiteral],
+      [t.isArrayExpression, arrayToLiteral],
+      [t.isObjectExpression, objectToLiteral],
+    ]
+    return toLiterals.reduce((literalVal, [test, toLiteralFn]) => {
+      if (literalVal) {
+        return literalVal
+      }
+      if (test(path)) {
+        return toLiteralFn(path)
+      }
+      return null
+    }, null)
   }
 }
 
@@ -162,20 +245,7 @@ function isRequireCall(callExpression) {
   })
 }
 
-function glamorize(literalNodePath) {
-  const source = literalNodePath.getSource()
-  let obj
-  // eslint-disable-next-line no-eval
-  eval(`obj = ${source}`)
-  const className = glamor.css(obj).toString()
-  return className
-}
-
 // generic utils
-function isOne(arg, fns) {
-  return fns.some(fn => fn(arg))
-}
-
 function looksLike(a, b) {
   return (
     a &&

@@ -113,3 +113,32 @@ g('div')(\\"css-18570p2\\")
 }
 "
 `;
+
+exports[`6. styles using member expressions 1`] = `
+"
+import glamorous from 'glamorous'
+
+const colors = {
+  primary: 'red',
+  secondary: 'blue',
+}
+
+glamorous.p({color: colors.primary})
+
+    👇
+
+import glamorous from 'glamorous'
+
+const colors = {
+  primary: 'red',
+  secondary: 'blue',
+}
+
+glamorous.p(\\"css-1ezp9xe\\")
+
+.css-1ezp9xe,
+[data-css-1ezp9xe] {
+  color: red;
+}
+"
+`;
