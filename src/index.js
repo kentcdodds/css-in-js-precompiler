@@ -5,7 +5,7 @@ import plugin from './plugin'
 const defaultBabelOptions = {
   babelrc: false,
   sourceMaps: true,
-  plugins: [plugin],
+  plugins: [[plugin, {a: 'b'}]],
 }
 
 module.exports = precompile
