@@ -69,10 +69,14 @@ But right now, we're naïvely assuming you're using `glamorous` and that you're
 calling your import `glamorous`. _But this solution will be modified to work
 with **any** CSS-in-JS library you're using_.
 
-```
+```javascript
 const precompileCSSInJS = require('css-in-js-precompiler')
 const result = precompileCSSInJS({
   source: 'glamorous.div({fontSize: 23})',
+  // can also do `sourceFile`
+  // if you provide just the `source` then make sure to provide
+  // a `babelOptions.filename` as well.
+  // You an also provide any other babel options you want with `babelOptions`
 })
 result.code === 'glamorous.div("css-my79es");'
 result.css === '.css-my79es,[data-css-my79es]{font-size:23px;}'
