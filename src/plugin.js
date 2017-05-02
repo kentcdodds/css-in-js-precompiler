@@ -1,11 +1,4 @@
-// uncomment this if you need to copy/paste this to astexplorer
-/*
-const glamor = {
-  css() {
-    return `css-${Math.random().toString().slice(2, 8)}`
-  },
-}
-/**/
+import nodePath from 'path'
 import * as glamor from 'glamor'
 
 export default function(babel) {
@@ -41,7 +34,7 @@ export default function(babel) {
         })
       },
       Program: {
-        exit() {
+        exit(programPath, {file}) {
           Array.from(glamorousIdentifiers).forEach(identifier => {
             const isGlamorousCall = looksLike(identifier, {
               parentPath: {
@@ -67,170 +60,200 @@ export default function(babel) {
               staticPath.replaceWith(t.stringLiteral(glamorize(staticPath)))
             })
           })
+
+          // babel utils
+          function getStaticPaths(path) {
+            const pathGetters = [
+              getStaticObjectPaths,
+              getStaticsInDynamic,
+              getStaticReferences,
+            ]
+            return pathGetters.reduce((pathsAlreadyGotten, pathGetter) => {
+              if (pathsAlreadyGotten) {
+                return pathsAlreadyGotten
+              }
+              const paths = pathGetter(path)
+              if (paths.length) {
+                return paths
+              }
+              return null
+            }, null)
+          }
+
+          function getStaticObjectPaths(path) {
+            if (path.type !== 'ObjectExpression') {
+              return []
+            }
+            return [path]
+          }
+
+          function getStaticsInDynamic(path) {
+            const isSupportedFunction = looksLike(path, {
+              node: {
+                type: 'ArrowFunctionExpression',
+                body: {
+                  type: 'ConditionalExpression',
+                  consequent: {type: 'ObjectExpression'},
+                  alternate: {type: 'ObjectExpression'},
+                },
+              },
+            })
+            if (!isSupportedFunction) {
+              return []
+            }
+            const things = [
+              ...getStaticPaths(path.get('body.consequent')),
+              ...getStaticPaths(path.get('body.alternate')),
+            ]
+            return things
+          }
+
+          function getStaticReferences(path) {
+            if (path.type !== 'Identifier') {
+              return []
+            }
+            const binding = path.scope.getBinding(path.node.name)
+            if (binding) {
+              return getStaticObjectPaths(binding.path.get('init'))
+            } else {
+              return []
+            }
+          }
+
+          function glamorize(literalNodePath) {
+            let obj
+            const {code} = babel.transformFromAst(
+              t.program([
+                t.expressionStatement(objectToLiteral(literalNodePath)),
+              ]),
+            )
+            // eslint-disable-next-line no-eval
+            eval(`obj = ${code}`)
+            const className = glamor.css(obj).toString()
+            return className
+          }
+
+          function objectToLiteral(path) {
+            const props = path.get('properties').map(propPath => {
+              const propNodeClone = t.clone(propPath.node)
+              const valPath = propPath.get('value')
+              propNodeClone.shorthand = false
+              propNodeClone.value = toLiteral(valPath)
+              return propNodeClone
+            })
+            return t.objectExpression(props)
+          }
+
+          function arrayToLiteral(path) {
+            const els = path.get('elements').map(toLiteral)
+            return t.arrayExpression(els)
+          }
+
+          function identifierToLiteral(path) {
+            const binding = path.scope.getBinding(path.node.name)
+            if (binding.path.type.startsWith('Import')) {
+              const importedFile = nodePath.resolve(
+                nodePath.dirname(file.opts.filename),
+                // TODO: support any extension and import style
+                `${binding.path.parent.source.value}.js`,
+              )
+              let literalValue
+              babel.transformFileSync(importedFile, {
+                plugins: [
+                  () => {
+                    let thingToLiteralize
+                    return {
+                      visitor: {
+                        ExportNamedDeclaration(namedDeclarationPath) {
+                          thingToLiteralize = namedDeclarationPath
+                            .get('declaration.declarations')[0]
+                            .get('init')
+                        },
+                        Program: {
+                          exit() {
+                            literalValue = toLiteral(thingToLiteralize)
+                          },
+                        },
+                      },
+                    }
+                  },
+                ],
+              })
+              return literalValue
+            }
+            const initPath = binding.path.get('init')
+            return toLiteral(initPath)
+          }
+
+          function memberExpressionToLiteral(path) {
+            const pathProperty = path.get('property')
+            let literalProperty
+            const pathPropertyValue = getPathPropertyValue()
+            const literalObject = toLiteral(path.get('object'))
+            if (t.isObjectExpression(literalObject)) {
+              const literalObjectProperty = literalObject.properties.find(
+                prop => {
+                  return prop.key.name === pathPropertyValue
+                },
+              )
+              if (literalObjectProperty) {
+                literalProperty = literalObjectProperty.value
+              }
+            } else if (t.isArrayExpression(literalObject)) {
+              literalProperty = literalObject.elements[pathPropertyValue]
+            } else {
+              throw new Error(
+                // eslint-disable-next-line max-len
+                `${literalObject.type} is not yet supported in memberExpressionToLiteral`,
+              )
+            }
+            return t.clone(literalProperty || t.identifier('undefined'))
+
+            function getPathPropertyValue() {
+              if (pathProperty.isIdentifier() && path.node.computed) {
+                return getLiteralPropertyValue(
+                  identifierToLiteral(pathProperty),
+                )
+              } else {
+                return getLiteralPropertyValue(pathProperty.node)
+              }
+            }
+
+            function getLiteralPropertyValue(node) {
+              if (t.isLiteral(node)) {
+                return node.value
+              } else if (t.isIdentifier(node)) {
+                return node.name
+              } else {
+                throw new Error(
+                  // eslint-disable-next-line max-len
+                  `${node.type} is not yet supported in getLiteralPropertyValue of memberExpressionToLiteral`,
+                )
+              }
+            }
+          }
+
+          function toLiteral(path) {
+            const toLiterals = [
+              [t.isLiteral, p => t.clone(p.node)],
+              [t.isMemberExpression, memberExpressionToLiteral],
+              [t.isIdentifier, identifierToLiteral],
+              [t.isArrayExpression, arrayToLiteral],
+              [t.isObjectExpression, objectToLiteral],
+            ]
+            return toLiterals.reduce((literalVal, [test, toLiteralFn]) => {
+              if (literalVal) {
+                return literalVal
+              }
+              if (test(path)) {
+                return toLiteralFn(path)
+              }
+              return null
+            }, null)
+          }
         },
       },
     },
-  }
-
-  // babel utils
-  function getStaticPaths(path) {
-    const pathGetters = [
-      getStaticObjectPaths,
-      getStaticsInDynamic,
-      getStaticReferences,
-    ]
-    return pathGetters.reduce((pathsAlreadyGotten, pathGetter) => {
-      if (pathsAlreadyGotten) {
-        return pathsAlreadyGotten
-      }
-      const paths = pathGetter(path)
-      if (paths.length) {
-        return paths
-      }
-      return null
-    }, null)
-  }
-
-  function getStaticObjectPaths(path) {
-    if (!isStaticObject(path.node)) {
-      return []
-    }
-    return [path]
-  }
-
-  function isStaticObject(node) {
-    return looksLike(node, {
-      type: 'ObjectExpression',
-    })
-  }
-
-  function getStaticsInDynamic(path) {
-    const isSupportedFunction = looksLike(path, {
-      node: {
-        type: 'ArrowFunctionExpression',
-        body: {
-          type: 'ConditionalExpression',
-          consequent: {type: 'ObjectExpression'},
-          alternate: {type: 'ObjectExpression'},
-        },
-      },
-    })
-    if (!isSupportedFunction) {
-      return []
-    }
-    const things = [
-      ...getStaticPaths(path.get('body.consequent')),
-      ...getStaticPaths(path.get('body.alternate')),
-    ]
-    return things
-  }
-
-  function getStaticReferences(path) {
-    if (path.type !== 'Identifier') {
-      return []
-    }
-    const binding = path.scope.getBinding(path.node.name)
-    if (binding) {
-      return getStaticObjectPaths(binding.path.get('init'))
-    } else {
-      return []
-    }
-  }
-
-  function glamorize(literalNodePath) {
-    let obj
-    const {code} = babel.transformFromAst(
-      t.program([t.expressionStatement(objectToLiteral(literalNodePath))]),
-    )
-    // eslint-disable-next-line no-eval
-    eval(`obj = ${code}`)
-    const className = glamor.css(obj).toString()
-    return className
-  }
-
-  function objectToLiteral(path) {
-    const props = path.get('properties').map(propPath => {
-      const propNodeClone = t.clone(propPath.node)
-      const valPath = propPath.get('value')
-      propNodeClone.shorthand = false
-      propNodeClone.value = toLiteral(valPath)
-      return propNodeClone
-    })
-    return t.objectExpression(props)
-  }
-
-  function arrayToLiteral(path) {
-    const els = path.get('elements').map(toLiteral)
-    return t.arrayExpression(els)
-  }
-
-  function identifierToLiteral(path) {
-    const binding = path.scope.getBinding(path.node.name)
-    const initPath = binding.path.get('init')
-    return toLiteral(initPath)
-  }
-
-  function memberExpressionToLiteral(path) {
-    const pathProperty = path.get('property')
-    let literalProperty
-    const pathPropertyValue = getPathPropertyValue()
-    const literalObject = toLiteral(path.get('object'))
-    if (t.isObjectExpression(literalObject)) {
-      const literalObjectProperty = literalObject.properties.find(prop => {
-        return prop.key.name === pathPropertyValue
-      })
-      if (literalObjectProperty) {
-        literalProperty = literalObjectProperty.value
-      }
-    } else if (t.isArrayExpression(literalObject)) {
-      literalProperty = literalObject.elements[pathPropertyValue]
-    } else {
-      throw new Error(
-        // eslint-disable-next-line max-len
-        `${literalObject.type} is not yet supported in memberExpressionToLiteral`,
-      )
-    }
-    return t.clone(literalProperty || t.identifier('undefined'))
-
-    function getPathPropertyValue() {
-      if (pathProperty.isIdentifier() && path.node.computed) {
-        return getLiteralPropertyValue(identifierToLiteral(pathProperty))
-      } else {
-        return getLiteralPropertyValue(pathProperty.node)
-      }
-    }
-
-    function getLiteralPropertyValue(node) {
-      if (t.isLiteral(node)) {
-        return node.value
-      } else if (t.isIdentifier(node)) {
-        return node.name
-      } else {
-        throw new Error(
-          // eslint-disable-next-line max-len
-          `${node.type} is not yet supported in getLiteralPropertyValue of memberExpressionToLiteral`,
-        )
-      }
-    }
-  }
-
-  function toLiteral(path) {
-    const toLiterals = [
-      [t.isLiteral, p => t.clone(p.node)],
-      [t.isMemberExpression, memberExpressionToLiteral],
-      [t.isIdentifier, identifierToLiteral],
-      [t.isArrayExpression, arrayToLiteral],
-      [t.isObjectExpression, objectToLiteral],
-    ]
-    return toLiterals.reduce((literalVal, [test, toLiteralFn]) => {
-      if (literalVal) {
-        return literalVal
-      }
-      if (test(path)) {
-        return toLiteralFn(path)
-      }
-      return null
-    }, null)
   }
 }
 

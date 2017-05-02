@@ -15,6 +15,7 @@ function precompile({source, sourceFile, babelOptions}) {
   const {css} = renderStatic(() => {
     if (sourceFile) {
       result = babel.transformFileSync(sourceFile, {
+        filename: sourceFile,
         ...defaultBabelOptions,
         ...babelOptions,
       })

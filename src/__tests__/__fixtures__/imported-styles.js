@@ -1,4 +1,4 @@
 import glamorous from 'glamorous'
-import {colors} from './styles'
+import {colors as col} from './styles'
 
-glamorous.p({color: colors.primary})
+glamorous.p({color: col.primary})

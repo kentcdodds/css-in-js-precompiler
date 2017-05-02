@@ -142,3 +142,24 @@ glamorous.p(\\"css-1ezp9xe\\")
 }
 "
 `;
+
+exports[`7. styles using variables across files 1`] = `
+"
+import glamorous from 'glamorous'
+import {colors as col} from './styles'
+
+glamorous.p({color: col.primary})
+
+    👇
+
+import glamorous from 'glamorous'
+import {colors as col} from './styles'
+
+glamorous.p(\\"css-1ezp9xe\\")
+
+.css-1ezp9xe,
+[data-css-1ezp9xe] {
+  color: red;
+}
+"
+`;

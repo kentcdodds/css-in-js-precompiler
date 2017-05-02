@@ -42,7 +42,6 @@ const tests = [
     fixtureName: 'member-expression-reference.js',
   },
   {
-    modifier: 'skip',
     title: 'styles using variables across files',
     fixtureName: 'imported-styles.js',
   },
@@ -57,7 +56,10 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
   function testFn() {
     const sourceFile = path.join(__dirname, '__fixtures__', fixtureName)
     const source = fs.readFileSync(sourceFile, 'utf8')
-    const result = precompile({source, babelOptions})
+    const result = precompile({
+      source,
+      babelOptions: {...babelOptions, filename: sourceFile},
+    })
 
     const {code, css} = result
     const formattedCSS = cssParser.stringify(cssParser.parse(css)).trim()
