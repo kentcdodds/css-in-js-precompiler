@@ -56,12 +56,12 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
   function testFn() {
     const sourceFile = path.join(__dirname, '__fixtures__', fixtureName)
     const source = fs.readFileSync(sourceFile, 'utf8')
-    const result = precompile({
-      source,
+    const {transformed, css} = precompile({
+      sources: [source],
       babelOptions: {...babelOptions, filename: sourceFile},
     })
 
-    const {code, css} = result
+    const [{code}] = transformed
     const formattedCSS = cssParser.stringify(cssParser.parse(css)).trim()
     const spacer = `\n\n    👇\n\n`
     const output = `${source.trim()}${spacer}${code.trim()}\n\n${formattedCSS}`
@@ -73,17 +73,21 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
 test('does not change code that should not be changed', () => {
   const sourceFile = path.join(__dirname, '__fixtures__/untouched.js')
   const source = fs.readFileSync(sourceFile, 'utf8')
-  const result = precompile({sourceFile, babelOptions})
+  const {transformed, css} = precompile({
+    sourceFiles: [sourceFile],
+    babelOptions,
+  })
 
-  const {code, css} = result
+  const [{code}] = transformed
   expect(code.trim()).toEqual(source.trim())
   expect(css).toEqual('')
 })
 
 test('forwards along a bunch of stuff from babel', () => {
-  const result = precompile({
-    source: stripIndent(
-      `
+  const {transformed} = precompile({
+    sources: [
+      stripIndent(
+        `
         import glamorous from 'glamorous'
         glamorous.div(
           {
@@ -99,15 +103,15 @@ test('forwards along a bunch of stuff from babel', () => {
         )
         someOtherCall({fontSize: 30})
       `,
-    ).trim(),
+      ).trim(),
+    ],
   })
-  expect(Object.keys(result)).toEqual([
+  expect(Object.keys(transformed[0])).toEqual([
     'metadata',
     'options',
     'ignored',
     'code',
     'ast',
     'map',
-    'css',
   ])
 })

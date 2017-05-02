@@ -72,15 +72,17 @@ with **any** CSS-in-JS library you're using_.
 ```javascript
 const precompileCSSInJS = require('css-in-js-precompiler')
 const result = precompileCSSInJS({
-  source: 'glamorous.div({fontSize: 23})',
-  // can also do `sourceFile`
-  // if you provide just the `source` then make sure to provide
+  sources: ['glamorous.div({fontSize: 23})'],
+  // can also do `sourceFiles`
+  // if you provide just the `sources` then make sure to provide
   // a `babelOptions.filename` as well.
   // You an also provide any other babel options you want with `babelOptions`
+  // `babelOptions` can be a function that returns babel options and is called
+  // with the source/sourceFilename.
 })
-result.code === 'glamorous.div("css-my79es");'
+result.transformed[0].code === 'glamorous.div("css-my79es");'
+result.transformed[0].map === '<the code source map>'
 result.css === '.css-my79es,[data-css-my79es]{font-size:23px;}'
-result.map === '<the code source map>'
 ```
 
 ## Inspiration

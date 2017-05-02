@@ -5,27 +5,36 @@ import plugin from './plugin'
 const defaultBabelOptions = {
   babelrc: false,
   sourceMaps: true,
-  plugins: [[plugin, {a: 'b'}]],
+  plugins: [plugin],
+  parserOpts: {plugins: ['jsx']},
 }
 
 module.exports = precompile
 
-function precompile({source, sourceFile, babelOptions}) {
-  let result
-  const {css} = renderStatic(() => {
-    if (sourceFile) {
-      result = babel.transformFileSync(sourceFile, {
-        filename: sourceFile,
-        ...defaultBabelOptions,
-        ...babelOptions,
-      })
+function precompile({sources, sourceFiles, babelOptions}) {
+  let transformed
+  const {css, ids} = renderStatic(() => {
+    if (sourceFiles) {
+      transformed = sourceFiles.map(filename =>
+        babel.transformFileSync(filename, {
+          filename,
+          ...defaultBabelOptions,
+          ...(typeof babelOptions === 'function' ?
+            babelOptions(filename) :
+            babelOptions),
+        }),
+      )
     } else {
-      result = babel.transform(source, {
-        ...defaultBabelOptions,
-        ...babelOptions,
-      })
+      transformed = sources.map(src =>
+        babel.transform(src, {
+          ...defaultBabelOptions,
+          ...(typeof babelOptions === 'function' ?
+            babelOptions(src) :
+            babelOptions),
+        }),
+      )
     }
     return '<div>fake html to make glamor happy</div>'
   })
-  return Object.assign(result, {css})
+  return {transformed, css, ids}
 }

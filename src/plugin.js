@@ -34,8 +34,8 @@ export default function(babel) {
         })
       },
       Program: {
-        exit(programPath, context) {
-          const toLiteral = getLiteralizers(context)
+        exit(programPath, state) {
+          const toLiteral = getLiteralizers(state)
           Array.from(glamorousIdentifiers).forEach(identifier => {
             const isGlamorousCall = looksLike(identifier, {
               parentPath: {
