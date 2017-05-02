@@ -1,3 +1,4 @@
+import fs from 'fs'
 import * as babel from 'babel-core'
 import {renderStatic} from 'glamor/server'
 import plugin from './plugin'
@@ -11,30 +12,30 @@ const defaultBabelOptions = {
 
 module.exports = precompile
 
-function precompile({sources, sourceFiles, babelOptions}) {
-  let transformed
+function precompile({sources = [], sourceFiles = [], babelOptions}) {
+  let transformed = []
   const {css, ids} = renderStatic(() => {
-    if (sourceFiles) {
-      transformed = sourceFiles.map(filename =>
-        babel.transformFileSync(filename, {
+    transformed = sourceFiles
+      .map(filename => ({filename, code: fs.readFileSync(filename, 'utf8')}))
+      .concat(sources)
+      .filter(({code}) => hasGlamorous(code))
+      .map(({filename, code}) =>
+        babel.transform(code, {
           filename,
           ...defaultBabelOptions,
           ...(typeof babelOptions === 'function' ?
-            babelOptions(filename) :
+            babelOptions(filename, code) :
             babelOptions),
         }),
       )
-    } else {
-      transformed = sources.map(src =>
-        babel.transform(src, {
-          ...defaultBabelOptions,
-          ...(typeof babelOptions === 'function' ?
-            babelOptions(src) :
-            babelOptions),
-        }),
-      )
-    }
     return '<div>fake html to make glamor happy</div>'
   })
   return {transformed, css, ids}
+}
+
+// TODO: when we support more than just glamorous, we'll want to
+// expand this or even remove it entirely, but this ahead-of-time
+// filtering is really handy for performance.
+function hasGlamorous(code) {
+  return code.indexOf('glamorous') !== -1
 }

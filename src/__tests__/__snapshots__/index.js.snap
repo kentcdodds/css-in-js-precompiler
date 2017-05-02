@@ -163,3 +163,17 @@ glamorous.p(\\"css-1ezp9xe\\")
 }
 "
 `;
+
+exports[`css from 4 concatenated files 1`] = `
+"sources:
+  import glamorous from 'glamorous';glamorous.div({margin: 0})
+  import glamorous from 'glamorous';glamorous.article({margin: 1})
+
+sourceFiles:
+  /Users/kdodds/Developer/css-in-js-precompiler/src/__tests__/__fixtures__/import.js
+  /Users/kdodds/Developer/css-in-js-precompiler/src/__tests__/__fixtures__/require.js
+
+    👇
+
+.css-1ea0ufb,[data-css-1ea0ufb]{font-size:10px;}.css-1rbjb59,[data-css-1rbjb59]{font-size:25px;}.css-1wiofhw,[data-css-1wiofhw]{margin:0;}.css-1jr7337,[data-css-1jr7337]{margin:1px;}"
+`;

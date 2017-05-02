@@ -65,25 +65,40 @@ And you should be able to use it now :)
 ## Usage
 
 This is still under development so the API and assumptions are going to change.
-But right now, we're naïvely assuming you're using `glamorous` and that you're
-calling your import `glamorous`. _But this solution will be modified to work
-with **any** CSS-in-JS library you're using_.
+But right now, we're naïvely assuming you're using `glamorous`. _But this
+solution will be modified to work with **any** CSS-in-JS library you're using_.
 
 ```javascript
 const precompileCSSInJS = require('css-in-js-precompiler')
-const result = precompileCSSInJS({
-  sources: ['glamorous.div({fontSize: 23})'],
+const options = {
+  sources: [
+    {
+      code: `import glamorous from 'glamorous';\nglamorous.div({fontSize: 23})`,
+      filename: '/some/path.js',
+    },
+  ],
+  sourceFiles: ['/some/other-path.js'],
   // can also do `sourceFiles`
   // if you provide just the `sources` then make sure to provide
   // a `babelOptions.filename` as well.
   // You an also provide any other babel options you want with `babelOptions`
   // `babelOptions` can be a function that returns babel options and is called
   // with the source/sourceFilename.
-})
-result.transformed[0].code === 'glamorous.div("css-my79es");'
+}
+
+const result = precompileCSSInJS(options)
+result.transformed[0].code === `import glamorous from 'glamorous';\nglamorous.div("css-my79es");`
 result.transformed[0].map === '<the code source map>'
 result.css === '.css-my79es,[data-css-my79es]{font-size:23px;}'
 ```
+
+### options
+
+#### `sources`
+
+> Array<String>
+
+This is the raw source code that you want to precompile
 
 ## Inspiration
 

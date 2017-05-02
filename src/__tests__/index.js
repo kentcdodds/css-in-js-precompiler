@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import * as babel from 'babel-core'
 import cssParser from 'css'
 import stripIndent from 'strip-indent'
 import * as glamor from 'glamor'
@@ -54,17 +55,23 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     test(title, testFn)
   }
   function testFn() {
-    const sourceFile = path.join(__dirname, '__fixtures__', fixtureName)
-    const source = fs.readFileSync(sourceFile, 'utf8')
+    const filename = fixturePath(fixtureName)
+    const sourceCode = fs.readFileSync(filename, 'utf8')
     const {transformed, css} = precompile({
-      sources: [source],
-      babelOptions: {...babelOptions, filename: sourceFile},
+      sources: [{filename, code: sourceCode}],
+      babelOptions,
     })
 
     const [{code}] = transformed
     const formattedCSS = cssParser.stringify(cssParser.parse(css)).trim()
     const spacer = `\n\n    👇\n\n`
-    const output = `${source.trim()}${spacer}${code.trim()}\n\n${formattedCSS}`
+    const output = [
+      sourceCode.trim(),
+      spacer,
+      code.trim(),
+      '\n\n',
+      formattedCSS,
+    ].join('')
 
     expect(`\n${output.trim()}\n`).toMatchSnapshot(`${index + 1}. ${title}`)
   }
@@ -86,24 +93,26 @@ test('does not change code that should not be changed', () => {
 test('forwards along a bunch of stuff from babel', () => {
   const {transformed} = precompile({
     sources: [
-      stripIndent(
-        `
-        import glamorous from 'glamorous'
-        glamorous.div(
-          {
-            fontSize: 20,
-            fontWeight: 'normal',
-          },
-          {
-            margin: 20,
-            ':hover': {
-              margin: 10,
-            },
-          },
-        )
-        someOtherCall({fontSize: 30})
-      `,
-      ).trim(),
+      {
+        code: stripIndent(
+          `
+            import glamorous from 'glamorous'
+            glamorous.div(
+              {
+                fontSize: 20,
+                fontWeight: 'normal',
+              },
+              {
+                margin: 20,
+                ':hover': {
+                  margin: 10,
+                },
+              },
+            )
+            someOtherCall({fontSize: 30})
+          `,
+        ).trim(),
+      },
     ],
   })
   expect(Object.keys(transformed[0])).toEqual([
@@ -115,3 +124,34 @@ test('forwards along a bunch of stuff from babel', () => {
     'map',
   ])
 })
+
+test('concats results of both sources and sourceFiles', () => {
+  const sources = [
+    {code: `import glamorous from 'glamorous';glamorous.div({margin: 0})`},
+    {code: `import glamorous from 'glamorous';glamorous.article({margin: 1})`},
+  ]
+  const sourceFiles = [fixturePath('import.js'), fixturePath('require.js')]
+  const {transformed, css} = precompile({sources, sourceFiles})
+  expect(transformed).toHaveLength(4)
+  const formattedSources = `sources:\n  ${sources
+    .map(({code}) => code)
+    .join('\n  ')}`
+  const formattedSourceFiless = `sourceFiles:\n  ${sourceFiles.join('\n  ')}`
+  const spacer = `\n\n    👇\n\n`
+  expect(
+    `${formattedSources}\n\n${formattedSourceFiless}${spacer}${css}`,
+  ).toMatchSnapshot(`css from 4 concatenated files`)
+})
+
+test('does not parse source which does not use `glamorous`', () => {
+  const sources = [{code: 'import glamNotOrous from "glam-not-orous"'}]
+  const sourceFiles = [fixturePath('glam-not-orous.js')]
+  const transformSpy = jest.spyOn(babel, 'transform')
+  precompile({sources, sourceFiles})
+  expect(transformSpy).not.toHaveBeenCalled()
+  transformSpy.mockRestore()
+})
+
+function fixturePath(name) {
+  return path.join(__dirname, '__fixtures__', name)
+}
