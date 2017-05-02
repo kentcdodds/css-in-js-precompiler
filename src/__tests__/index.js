@@ -58,22 +58,23 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     const filename = fixturePath(fixtureName)
     const sourceCode = fs.readFileSync(filename, 'utf8')
     const {transformed, css} = precompile({
-      sources: [{filename, code: sourceCode}],
-      babelOptions,
+      sources: [{filename, code: sourceCode, babelOptions}],
     })
 
     const [{code}] = transformed
-    const formattedCSS = cssParser.stringify(cssParser.parse(css)).trim()
-    const spacer = `\n\n    👇\n\n`
-    const output = [
-      sourceCode.trim(),
-      spacer,
-      code.trim(),
-      '\n\n',
-      formattedCSS,
-    ].join('')
+    const output = trimAndNewline(
+      [
+        '\n',
+        sourceCode.trim(),
+        `\n\n    👇\n\n`,
+        code.trim(),
+        '\n\n',
+        formatCSS(css),
+        '\n',
+      ].join(''),
+    )
 
-    expect(`\n${output.trim()}\n`).toMatchSnapshot(`${index + 1}. ${title}`)
+    expect(output).toMatchSnapshot(`${index + 1}. ${title}`)
   }
 })
 
@@ -81,8 +82,7 @@ test('does not change code that should not be changed', () => {
   const sourceFile = path.join(__dirname, '__fixtures__/untouched.js')
   const source = fs.readFileSync(sourceFile, 'utf8')
   const {transformed, css} = precompile({
-    sourceFiles: [sourceFile],
-    babelOptions,
+    sources: [{filename: sourceFile, babelOptions}],
   })
 
   const [{code}] = transformed
@@ -91,7 +91,7 @@ test('does not change code that should not be changed', () => {
 })
 
 test('forwards along a bunch of stuff from babel', () => {
-  const {transformed} = precompile({
+  const results = precompile({
     sources: [
       {
         code: stripIndent(
@@ -115,7 +115,7 @@ test('forwards along a bunch of stuff from babel', () => {
       },
     ],
   })
-  expect(Object.keys(transformed[0])).toEqual([
+  expect(Object.keys(results.transformed[0])).toEqual([
     'metadata',
     'options',
     'ignored',
@@ -123,24 +123,33 @@ test('forwards along a bunch of stuff from babel', () => {
     'ast',
     'map',
   ])
+  expect(Object.keys(results)).toEqual(['transformed', 'css', 'ids'])
 })
 
-test('concats results of both sources and sourceFiles', () => {
-  const sources = [
+test('can accept sources with just code or just filename', () => {
+  const justFilename = [
+    {filename: fixturePath('import.js')},
+    {filename: fixturePath('require.js')},
+  ]
+  const justCode = [
     {code: `import glamorous from 'glamorous';glamorous.div({margin: 0})`},
     {code: `import glamorous from 'glamorous';glamorous.article({margin: 1})`},
   ]
-  const sourceFiles = [fixturePath('import.js'), fixturePath('require.js')]
-  const {transformed, css} = precompile({sources, sourceFiles})
+  const {transformed, css} = precompile({
+    sources: [...justCode, ...justFilename],
+  })
   expect(transformed).toHaveLength(4)
-  const formattedSources = `sources:\n  ${sources
-    .map(({code}) => code)
-    .join('\n  ')}`
-  const formattedSourceFiless = `sourceFiles:\n  ${sourceFiles.join('\n  ')}`
-  const spacer = `\n\n    👇\n\n`
-  expect(
-    `${formattedSources}\n\n${formattedSourceFiless}${spacer}${css}`,
-  ).toMatchSnapshot(`css from 4 concatenated files`)
+  const output = trimAndNewline(
+    [
+      'justCode:\n  ',
+      justCode.map(({code}) => code).join('\n  '),
+      '\n\njustFiles:\n  ',
+      justFilename.map(({filename}) => relativizePaths(filename)).join('\n  '),
+      `\n\n    👇\n\n`,
+      formatCSS(css),
+    ].join(''),
+  )
+  expect(output).toMatchSnapshot(`css from 4 concatenated files`)
 })
 
 test('does not parse source which does not use `glamorous`', () => {
@@ -152,6 +161,27 @@ test('does not parse source which does not use `glamorous`', () => {
   transformSpy.mockRestore()
 })
 
+//////////////////// utils ////////////////////
+
 function fixturePath(name) {
   return path.join(__dirname, '__fixtures__', name)
+}
+
+function formatCSS(css) {
+  return cssParser.stringify(cssParser.parse(css)).trim()
+}
+
+/*
+ * This takes the results object and removes environment-specific
+ * elements from the path.
+ */
+function relativizePaths(filepath) {
+  return filepath
+    .replace(':/', ':\\')
+    .replace(path.resolve(__dirname, '../../'), '<projectRootDir>')
+    .replace(/\\/g, '/')
+}
+
+function trimAndNewline(string) {
+  return `\n${string.trim()}\n`
 }

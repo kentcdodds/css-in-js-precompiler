@@ -6,28 +6,31 @@ import plugin from './plugin'
 const defaultBabelOptions = {
   babelrc: false,
   sourceMaps: true,
-  plugins: [plugin],
+  plugins: [],
   parserOpts: {plugins: ['jsx']},
 }
 
 module.exports = precompile
 
-function precompile({sources = [], sourceFiles = [], babelOptions}) {
+function precompile({sources = []}) {
   let transformed = []
   const {css, ids} = renderStatic(() => {
-    transformed = sourceFiles
-      .map(filename => ({filename, code: fs.readFileSync(filename, 'utf8')}))
-      .concat(sources)
+    transformed = sources
+      .map(({filename, code = fs.readFileSync(filename, 'utf8'), ...rest}) => ({
+        filename,
+        code,
+        ...rest,
+      }))
       .filter(({code}) => hasGlamorous(code))
-      .map(({filename, code}) =>
-        babel.transform(code, {
+      .map(({filename, code, babelOptions = {}}) => {
+        const babelOptionsToUse = {
           filename,
           ...defaultBabelOptions,
-          ...(typeof babelOptions === 'function' ?
-            babelOptions(filename, code) :
-            babelOptions),
-        }),
-      )
+          ...babelOptions,
+        }
+        babelOptionsToUse.plugins.unshift(plugin)
+        return babel.transform(code, babelOptionsToUse)
+      })
     return '<div>fake html to make glamor happy</div>'
   })
   return {transformed, css, ids}

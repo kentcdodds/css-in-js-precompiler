@@ -75,15 +75,9 @@ const options = {
     {
       code: `import glamorous from 'glamorous';\nglamorous.div({fontSize: 23})`,
       filename: '/some/path.js',
+      babelOptions: {/* optional. Shallowly merges with the default babelOptions */}
     },
   ],
-  sourceFiles: ['/some/other-path.js'],
-  // can also do `sourceFiles`
-  // if you provide just the `sources` then make sure to provide
-  // a `babelOptions.filename` as well.
-  // You an also provide any other babel options you want with `babelOptions`
-  // `babelOptions` can be a function that returns babel options and is called
-  // with the source/sourceFilename.
 }
 
 const result = precompileCSSInJS(options)
@@ -96,9 +90,39 @@ result.css === '.css-my79es,[data-css-my79es]{font-size:23px;}'
 
 #### `sources`
 
-> Array<String>
+This is an array of `SourceObjects` which will be used to determine what source
+to precompile and how. Here are the available properties on these objects:
 
-This is the raw source code that you want to precompile
+#### code
+
+This is the source code to actually precompile. If this is not provided, then
+the code will be derived from the `filename`.
+
+##### filename
+
+This is a string path to the filename. If the `code` is not provided, this will
+be used to read the file. If this is not provided, then you will be unable to
+handle importing dynamic values from other files.
+
+#### babelOptions
+
+This is the same thing you would pass to `babel.transform` if you were calling
+it yourself. Read more [here](http://babeljs.io/docs/core-packages/#options).
+This will be shallowly merged with the default `babelOptions`. Currently
+(2017-05-02) the default babelOptions are:
+
+```javascript
+{
+  babelrc: false,
+  sourceMaps: true,
+  plugins: [/* our custom plugin to do this extraction */],
+  parserOpts: {plugins: ['jsx']},
+}
+```
+
+This is shallowly merged, with the exception of `plugins`. You can specify any
+plugins you want and we'll make sure we always include our own plugin to do
+the precompiling. (You're welcome).
 
 ## Inspiration
 
