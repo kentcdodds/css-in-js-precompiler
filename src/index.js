@@ -1,5 +1,6 @@
 import fs from 'fs'
 import * as babel from 'babel-core'
+import * as glamor from 'glamor'
 import {renderStatic} from 'glamor/server'
 import plugin from './plugin'
 
@@ -44,6 +45,7 @@ function precompile({sources = []}) {
       })
     return '<div>fake html to make glamor happy</div>'
   })
+  glamor.flush() // make sure multiple runs don't mess things up
   return {transformed, css, ids}
 }
 

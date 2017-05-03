@@ -3,7 +3,6 @@ import path from 'path'
 import * as babel from 'babel-core'
 import cssParser from 'css'
 import stripIndent from 'strip-indent'
-import * as glamor from 'glamor'
 import * as recast from 'recast'
 
 const precompile = require('../')
@@ -12,10 +11,6 @@ const babelOptions = {
   parserOpts: {parser: recast.parse},
   generatorOpts: {generator: recast.print, lineTerminator: '\n'},
 }
-
-afterEach(() => {
-  glamor.flush()
-})
 
 const tests = [
   {
