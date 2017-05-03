@@ -116,6 +116,10 @@ test('forwards along a bunch of stuff from babel', () => {
     ],
   })
   expect(Object.keys(results.transformed[0])).toEqual([
+    // just extra things that might be useful
+    'source',
+    'filename',
+    // babel stuff
     'metadata',
     'options',
     'ignored',

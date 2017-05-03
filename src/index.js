@@ -23,13 +23,24 @@ function precompile({sources = []}) {
       }))
       .filter(({code}) => hasGlamorous(code))
       .map(({filename, code, babelOptions = {}}) => {
+        if (!hasGlamorous(code)) {
+          return {
+            source: code,
+            code,
+            filename,
+          }
+        }
         const babelOptionsToUse = {
           filename,
           ...defaultBabelOptions,
           ...babelOptions,
         }
         babelOptionsToUse.plugins.unshift(plugin)
-        return babel.transform(code, babelOptionsToUse)
+        return {
+          source: code,
+          filename,
+          ...babel.transform(code, babelOptionsToUse),
+        }
       })
     return '<div>fake html to make glamor happy</div>'
   })
