@@ -109,14 +109,14 @@ handle importing dynamic values from other files.
 This is the same thing you would pass to `babel.transform` if you were calling
 it yourself. Read more [here](http://babeljs.io/docs/core-packages/#options).
 This will be shallowly merged with the default `babelOptions`. Currently
-(2017-05-02) the default babelOptions are:
+(2017-05-03) the default babelOptions are:
 
 ```javascript
 {
   babelrc: false,
   sourceMaps: true,
   plugins: [/* our custom plugin to do this extraction */],
-  parserOpts: {plugins: ['jsx']},
+  parserOpts: {plugins: [/* all of them except estree */]},
 }
 ```
 

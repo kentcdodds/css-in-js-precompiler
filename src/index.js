@@ -8,7 +8,27 @@ const defaultBabelOptions = {
   babelrc: false,
   sourceMaps: true,
   plugins: [],
-  parserOpts: {plugins: ['jsx']},
+  parserOpts: {
+    plugins: [
+      // include all the things because why not?
+      // 'estree', // except this one because why...?
+      'jsx',
+      'flow',
+      'classConstructorCall',
+      'doExpressions',
+      'trailingFunctionCommas',
+      'objectRestSpread',
+      'decorators',
+      'classProperties',
+      'exportExtensions',
+      'exponentiationOperator',
+      'asyncGenerators',
+      'functionBind',
+      'functionSent',
+      'dynamicImport',
+      'asyncFunctions',
+    ],
+  },
 }
 
 module.exports = precompile
