@@ -21,31 +21,36 @@ const babelOptions = {
 const tests = [
   {
     title: 'follows imports',
-    fixtureName: 'import.js',
+    fixtureName: 'import',
   },
   {
     title: 'follows requires',
-    fixtureName: 'require.js',
+    fixtureName: 'require',
   },
   {
     title: 'supports statics in arrow functions',
-    fixtureName: 'arrow-ternary.js',
+    fixtureName: 'arrow-ternary',
   },
   {
     title: 'follows references',
-    fixtureName: 'references.js',
+    fixtureName: 'references',
   },
   {
     title: 'when creating custom glamorous components',
-    fixtureName: 'wrapped-component.js',
+    fixtureName: 'wrapped-component',
   },
   {
     title: 'styles using member expressions',
-    fixtureName: 'member-expression-reference.js',
+    fixtureName: 'member-expression-reference',
   },
   {
     title: 'styles using variables across files',
-    fixtureName: 'imported-styles.js',
+    fixtureName: 'imported-styles',
+  },
+  {
+    modifier: 'skip',
+    title: 'handles glamor styles',
+    fixtureName: 'glamor',
   },
 ]
 
@@ -56,7 +61,7 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     test(title, testFn)
   }
   function testFn() {
-    const filename = fixturePath(`glamorous/${fixtureName}`)
+    const filename = fixturePath(`glamorous/${fixtureName}.js`)
     const sourceCode = fs.readFileSync(filename, 'utf8')
     const {transformed, css} = precompile({
       plugin: glamorPlugin,

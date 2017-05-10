@@ -19,13 +19,38 @@ module.exports = {
     return {transformed, css, ids}
   },
   getImportName(importPath) {
-    const defaultSpecifierPath = importPath.get('specifiers')[0]
     if (
-      importPath.node.source.value !== 'glamorous' ||
-      !t.isImportDefaultSpecifier(defaultSpecifierPath)
+      !looksLike(
+        importPath,
+        {
+          node: {
+            source: {value: 'glamorous'},
+            specifiers(specifiers) {
+              return specifiers.some(s => s.type === 'ImportDefaultSpecifier')
+            },
+          },
+        },
+        {
+          node: {
+            source: {value: 'glamor'},
+            specifiers(specifiers) {
+              return specifiers.some(s =>
+                looksLike(
+                  s,
+                  {type: 'ImportSpecifier', imported: {name: 'css'}},
+                  {type: 'ImportNamespaceSpecifier'},
+                ),
+              )
+            },
+          },
+        },
+      )
     ) {
       return null
     }
+    const defaultSpecifierPath = importPath
+      .get('specifiers')
+      .find(s => s.type === 'ImportDefaultSpecifier')
     const {node: {local: {name}}} = defaultSpecifierPath
     return name
   },

@@ -2,18 +2,20 @@
 export {looksLike}
 
 // generic utils
-function looksLike(a, b) {
+function looksLike(a, ...bs) {
   return (
     a &&
-    b &&
-    Object.keys(b).every(bKey => {
-      const bVal = b[bKey]
-      const aVal = a[bKey]
-      if (typeof bVal === 'function') {
-        return bVal(aVal)
-      }
-      return isPrimitive(bVal) ? bVal === aVal : looksLike(aVal, bVal)
-    })
+    bs.length &&
+    bs.some(b =>
+      Object.keys(b).every(bKey => {
+        const bVal = b[bKey]
+        const aVal = a[bKey]
+        if (typeof bVal === 'function') {
+          return bVal(aVal)
+        }
+        return isPrimitive(bVal) ? bVal === aVal : looksLike(aVal, bVal)
+      }),
+    )
   )
 }
 
