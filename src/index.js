@@ -2,7 +2,7 @@ import fs from 'fs'
 import * as babel from 'babel-core'
 import * as glamor from 'glamor'
 import {renderStatic} from 'glamor/server'
-import plugin from './plugin'
+import plugin from './babel-plugin'
 
 const defaultBabelOptions = {
   babelrc: false,

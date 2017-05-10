@@ -1,7 +1,7 @@
 import stripIndent from 'strip-indent'
 import * as recast from 'recast'
 import * as babel from 'babel-core'
-import plugin from '../plugin'
+import plugin from '../babel-plugin'
 
 test('converts static objects to css class names', () => {
   const source = `
