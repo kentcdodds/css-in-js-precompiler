@@ -1,7 +1,10 @@
 import * as babel from 'babel-core'
 import React from 'react'
+import {renderToString} from 'react-dom/server'
 import injectSheet, {SheetsRegistryProvider, SheetsRegistry} from 'react-jss'
 import {looksLike} from '../utils'
+
+const registry = new SheetsRegistry()
 
 const {types: t} = babel
 
@@ -10,8 +13,6 @@ module.exports = {
     return code.indexOf('react-jss') !== -1
   },
   start(callback) {
-    const registry = new SheetsRegistry()
-    React.createElement(SheetsRegistryProvider, {registry, children: []})
     const transformed = callback()
     return {transformed, css: registry.toString()}
   },
@@ -47,13 +48,27 @@ module.exports = {
     const callExpression = identifierPath.parentPath
     return callExpression.get('arguments')
   },
-  getClassName(argument) {
-    // TODO: this needs to be synchronous :-/
+  getReplacementArg(argument) {
     let classNames
-    injectSheet(argument)(({classes}) => {
+    const Temp = injectSheet(argument)(({classes}) => {
       classNames = classes
+      return null
     })
-    return classNames
+    renderToString(
+      React.createElement(SheetsRegistryProvider, {
+        registry,
+        children: React.createElement(Temp),
+      }),
+    )
+    return t.objectExpression(
+      Object.keys(classNames).reduce((props, key) => {
+        const className = classNames[key]
+        props.push(
+          t.objectProperty(t.identifier(key), t.stringLiteral(className)),
+        )
+        return props
+      }, []),
+    )
   },
 }
 

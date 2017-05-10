@@ -7,7 +7,7 @@ function getBabelPlugin({
   getImportName = () => null,
   getRequireName = () => null,
   getArgumentsPaths = () => [],
-  getClassName = requiredParam('getClassName'),
+  getReplacementArg = requiredParam('getReplacementArg'),
 }) {
   return cssInJSPrecompiler
 
@@ -48,7 +48,7 @@ function getBabelPlugin({
                 )
                 .filter(Boolean)
               staticPaths.forEach(staticPath => {
-                staticPath.replaceWith(t.stringLiteral(precompile(staticPath)))
+                staticPath.replaceWith(precompile(staticPath))
               })
 
               function precompile(literalNodePath) {
@@ -60,8 +60,7 @@ function getBabelPlugin({
                 )
                 // eslint-disable-next-line no-eval
                 eval(`obj = ${code}`)
-                const className = getClassName(obj)
-                return className
+                return getReplacementArg(obj)
               }
             })
 

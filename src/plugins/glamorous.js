@@ -54,8 +54,8 @@ module.exports = {
     const callExpression = identifierPath.parentPath.parentPath
     return callExpression.get('arguments')
   },
-  getClassName(argument) {
-    return glamor.css(argument).toString()
+  getReplacementArg(argument) {
+    return t.stringLiteral(glamor.css(argument).toString())
   },
 }
 

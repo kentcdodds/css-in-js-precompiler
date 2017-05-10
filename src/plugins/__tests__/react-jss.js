@@ -12,7 +12,7 @@ const babelOptions = {
 
 const tests = [
   {
-    modifier: 'skip',
+    modifier: 'only',
     title: 'basic',
     fixtureName: 'basic.js',
   },
