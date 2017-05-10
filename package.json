@@ -61,7 +61,8 @@
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/__fixtures__/"
+      "/__fixtures__/",
+      "/__tests__/helpers/"
     ],
     "transformIgnorePatterns": [
       "/node_modules/",

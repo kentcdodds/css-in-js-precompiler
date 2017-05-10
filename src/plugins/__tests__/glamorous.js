@@ -1,11 +1,16 @@
 import fs from 'fs'
-import path from 'path'
 import * as babel from 'babel-core'
-import cssParser from 'css'
 import stripIndent from 'strip-indent'
 import * as recast from 'recast'
+import {
+  formatOutput,
+  fixturePath,
+  trimAndNewline,
+  relativizePaths,
+  formatCSS,
+} from './helpers/utils'
 
-const glamorPlugin = require('../glamor')
+const glamorPlugin = require('../glamorous')
 const precompile = require('../../')
 
 const babelOptions = {
@@ -51,7 +56,7 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     test(title, testFn)
   }
   function testFn() {
-    const filename = fixturePath(fixtureName)
+    const filename = fixturePath(`glamorous/${fixtureName}`)
     const sourceCode = fs.readFileSync(filename, 'utf8')
     const {transformed, css} = precompile({
       plugin: glamorPlugin,
@@ -59,24 +64,14 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     })
 
     const [{code}] = transformed
-    const output = trimAndNewline(
-      [
-        '\n',
-        sourceCode.trim(),
-        `\n\n    👇\n\n`,
-        code.trim(),
-        '\n\n',
-        formatCSS(css),
-        '\n',
-      ].join(''),
-    )
+    const output = formatOutput({sourceCode, code, css})
 
     expect(output).toMatchSnapshot(`${index + 1}. ${title}`)
   }
 })
 
 test('does not change code that should not be changed', () => {
-  const sourceFile = path.join(__dirname, '__fixtures__/untouched.js')
+  const sourceFile = fixturePath(`glamorous/untouched.js`)
   const source = fs.readFileSync(sourceFile, 'utf8')
   const {transformed, css} = precompile({
     plugin: glamorPlugin,
@@ -131,8 +126,8 @@ test('forwards along a bunch of stuff from babel', () => {
 
 test('can accept sources with just code or just filename', () => {
   const justFilename = [
-    {filename: fixturePath('import.js')},
-    {filename: fixturePath('require.js')},
+    {filename: fixturePath('glamorous/import.js')},
+    {filename: fixturePath('glamorous/require.js')},
   ]
   const justCode = [
     {code: `import glamorous from 'glamorous';glamorous.div({margin: 0})`},
@@ -158,34 +153,9 @@ test('can accept sources with just code or just filename', () => {
 
 test('does not parse source which does not use `glamorous`', () => {
   const sources = [{code: 'import glamNotOrous from "glam-not-orous"'}]
-  const sourceFiles = [fixturePath('glam-not-orous.js')]
+  const sourceFiles = [fixturePath('glamorous/glam-not-orous.js')]
   const transformSpy = jest.spyOn(babel, 'transform')
   precompile({plugin: glamorPlugin, sources, sourceFiles})
   expect(transformSpy).not.toHaveBeenCalled()
   transformSpy.mockRestore()
 })
-
-//////////////////// utils ////////////////////
-
-function fixturePath(name) {
-  return path.join(__dirname, '__fixtures__', name)
-}
-
-function formatCSS(css) {
-  return cssParser.stringify(cssParser.parse(css)).trim()
-}
-
-/*
- * This takes the results object and removes environment-specific
- * elements from the path.
- */
-function relativizePaths(filepath) {
-  return filepath
-    .replace(':/', ':\\')
-    .replace(path.resolve(__dirname, '../../'), '<projectRootDir>')
-    .replace(/\\/g, '/')
-}
-
-function trimAndNewline(string) {
-  return `\n${string.trim()}\n`
-}

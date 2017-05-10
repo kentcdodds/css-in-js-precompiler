@@ -171,8 +171,8 @@ justCode:
   import glamorous from 'glamorous';glamorous.article({margin: 1})
 
 justFiles:
-  <projectRootDir>/plugins/__tests__/__fixtures__/import.js
-  <projectRootDir>/plugins/__tests__/__fixtures__/require.js
+  <projectRootDir>/plugins/__tests__/__fixtures__/glamorous/import.js
+  <projectRootDir>/plugins/__tests__/__fixtures__/glamorous/require.js
 
     👇
 

@@ -31,8 +31,8 @@ const defaultBabelOptions = {
 
 module.exports = precompile
 
-function precompile({sources = [], plugin}) {
-  return plugin.start(() => {
+function precompile({sources = [], plugin: precompilerPlugin}) {
+  return precompilerPlugin.start(() => {
     return sources
       .map(({filename, code = fs.readFileSync(filename, 'utf8'), ...rest}) => ({
         filename,
@@ -40,7 +40,7 @@ function precompile({sources = [], plugin}) {
         ...rest,
       }))
       .map(({filename, code, babelOptions = {}}) => {
-        if (!plugin.shouldTranspile({code, filename})) {
+        if (!precompilerPlugin.shouldTranspile({code, filename})) {
           return {
             source: code,
             code,
@@ -52,7 +52,7 @@ function precompile({sources = [], plugin}) {
           ...defaultBabelOptions,
           ...babelOptions,
         }
-        babelOptionsToUse.plugins.unshift(babelPlugin)
+        babelOptionsToUse.plugins.unshift(babelPlugin(precompilerPlugin))
         return {
           source: code,
           filename,
