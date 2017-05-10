@@ -37,15 +37,22 @@ module.exports = {
     const {id: {name}} = node
     return name
   },
-  shouldHandleIdentifier(identifierPath) {
-    return looksLike(identifierPath, {
-      parentPath: {
-        type: type => type === 'MemberExpression' || type === 'CallExpression',
+  getArgumentsPaths(identifierPath) {
+    if (
+      !looksLike(identifierPath, {
         parentPath: {
-          type: 'CallExpression',
+          type: type =>
+            type === 'MemberExpression' || type === 'CallExpression',
+          parentPath: {
+            type: 'CallExpression',
+          },
         },
-      },
-    })
+      })
+    ) {
+      return []
+    }
+    const callExpression = identifierPath.parentPath.parentPath
+    return callExpression.get('arguments')
   },
   getClassName(argument) {
     return glamor.css(argument).toString()

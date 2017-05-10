@@ -6,7 +6,7 @@ export default getBabelPlugin
 function getBabelPlugin({
   getImportName = () => null,
   getRequireName = () => null,
-  shouldHandleIdentifier = () => false,
+  getArgumentsPaths = () => [],
   getClassName = requiredParam('getClassName'),
 }) {
   return cssInJSPrecompiler
@@ -41,12 +41,7 @@ function getBabelPlugin({
           exit(programPath, state) {
             const toLiteral = getLiteralizers(state)
             Array.from(cssInJsIdentifiers).forEach(identifier => {
-              if (!shouldHandleIdentifier(identifier)) {
-                return
-              }
-              const callExpression = identifier.parentPath.parentPath
-              const staticPaths = callExpression
-                .get('arguments')
+              const staticPaths = getArgumentsPaths(identifier)
                 .reduce(
                   (paths, argPath) => paths.concat(getStaticPaths(argPath)),
                   [],
