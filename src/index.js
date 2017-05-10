@@ -1,8 +1,6 @@
 import fs from 'fs'
 import * as babel from 'babel-core'
-import * as glamor from 'glamor'
-import {renderStatic} from 'glamor/server'
-import plugin from './babel-plugin'
+import babelPlugin from './babel-plugin'
 
 const defaultBabelOptions = {
   babelrc: false,
@@ -33,18 +31,16 @@ const defaultBabelOptions = {
 
 module.exports = precompile
 
-function precompile({sources = []}) {
-  let transformed = []
-  const {css, ids} = renderStatic(() => {
-    transformed = sources
+function precompile({sources = [], plugin}) {
+  return plugin.start(() => {
+    return sources
       .map(({filename, code = fs.readFileSync(filename, 'utf8'), ...rest}) => ({
         filename,
         code,
         ...rest,
       }))
-      .filter(({code}) => hasGlamorous(code))
       .map(({filename, code, babelOptions = {}}) => {
-        if (!hasGlamorous(code)) {
+        if (!plugin.shouldTranspile({code, filename})) {
           return {
             source: code,
             code,
@@ -56,22 +52,12 @@ function precompile({sources = []}) {
           ...defaultBabelOptions,
           ...babelOptions,
         }
-        babelOptionsToUse.plugins.unshift(plugin)
+        babelOptionsToUse.plugins.unshift(babelPlugin)
         return {
           source: code,
           filename,
           ...babel.transform(code, babelOptionsToUse),
         }
       })
-    return '<div>fake html to make glamor happy</div>'
   })
-  glamor.flush() // make sure multiple runs don't mess things up
-  return {transformed, css, ids}
-}
-
-// TODO: when we support more than just glamorous, we'll want to
-// expand this or even remove it entirely, but this ahead-of-time
-// filtering is really handy for performance.
-function hasGlamorous(code) {
-  return code.indexOf('glamorous') !== -1
 }

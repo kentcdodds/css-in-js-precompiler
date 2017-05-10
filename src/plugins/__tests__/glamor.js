@@ -5,7 +5,8 @@ import cssParser from 'css'
 import stripIndent from 'strip-indent'
 import * as recast from 'recast'
 
-const precompile = require('../')
+const glamorPlugin = require('../glamor')
+const precompile = require('../../')
 
 const babelOptions = {
   parserOpts: {parser: recast.parse},
@@ -53,6 +54,7 @@ tests.forEach(({title, fixtureName, modifier}, index) => {
     const filename = fixturePath(fixtureName)
     const sourceCode = fs.readFileSync(filename, 'utf8')
     const {transformed, css} = precompile({
+      plugin: glamorPlugin,
       sources: [{filename, code: sourceCode, babelOptions}],
     })
 
@@ -77,6 +79,7 @@ test('does not change code that should not be changed', () => {
   const sourceFile = path.join(__dirname, '__fixtures__/untouched.js')
   const source = fs.readFileSync(sourceFile, 'utf8')
   const {transformed, css} = precompile({
+    plugin: glamorPlugin,
     sources: [{filename: sourceFile, babelOptions}],
   })
 
@@ -87,6 +90,7 @@ test('does not change code that should not be changed', () => {
 
 test('forwards along a bunch of stuff from babel', () => {
   const results = precompile({
+    plugin: glamorPlugin,
     sources: [
       {
         code: stripIndent(
@@ -135,6 +139,7 @@ test('can accept sources with just code or just filename', () => {
     {code: `import glamorous from 'glamorous';glamorous.article({margin: 1})`},
   ]
   const {transformed, css} = precompile({
+    plugin: glamorPlugin,
     sources: [...justCode, ...justFilename],
   })
   expect(transformed).toHaveLength(4)
@@ -155,7 +160,7 @@ test('does not parse source which does not use `glamorous`', () => {
   const sources = [{code: 'import glamNotOrous from "glam-not-orous"'}]
   const sourceFiles = [fixturePath('glam-not-orous.js')]
   const transformSpy = jest.spyOn(babel, 'transform')
-  precompile({sources, sourceFiles})
+  precompile({plugin: glamorPlugin, sources, sourceFiles})
   expect(transformSpy).not.toHaveBeenCalled()
   transformSpy.mockRestore()
 })
