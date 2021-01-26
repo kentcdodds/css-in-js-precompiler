@@ -24,6 +24,7 @@
     "babel-cli": "^6.23.0",
     "babel-jest": "^19.0.0",
     "babel-preset-env": "^1.2.0",
+    "babel-preset-react": "^6.24.1",
     "babel-preset-stage-2": "^6.22.0",
     "babel-register": "^6.23.0",
     "codecov": "^2.1.0",
@@ -39,6 +40,9 @@
     "nps-utils": "^1.1.2",
     "opt-cli": "^1.5.1",
     "prettier-eslint-cli": "^3.1.2",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
+    "react-jss": "^6.1.1",
     "recast": "^0.12.3",
     "semantic-release": "^6.3.6",
     "strip-indent": "^2.0.0",
@@ -61,7 +65,8 @@
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/__fixtures__/"
+      "/__fixtures__/",
+      "/__tests__/helpers/"
     ],
     "transformIgnorePatterns": [
       "/node_modules/",
@@ -69,10 +74,10 @@
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
+        "branches": 60,
+        "functions": 60,
+        "lines": 60,
+        "statements": 60
       }
     }
   },

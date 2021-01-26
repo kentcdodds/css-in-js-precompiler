@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`1. basic 1`] = `
+"
+import React from 'react'
+import injectSheet from 'react-jss'
+
+const styles = {
+  button: {
+    fontWeight: 'bold',
+  },
+}
+
+const Button = ({classes, children}) =>
+  React.createElement('button', {className: classes.button})
+
+export default injectSheet(styles)(Button)
+
+    👇
+
+import React from 'react'
+import injectSheet from 'react-jss'
+
+const styles = {
+  button: \\"button-0-0\\"
+}
+
+const Button = ({classes, children}) =>
+  React.createElement('button', {className: classes.button})
+
+export default injectSheet(styles)(Button)
+
+.button-0-0 {
+  font-weight: bold;
+}
+"
+`;
